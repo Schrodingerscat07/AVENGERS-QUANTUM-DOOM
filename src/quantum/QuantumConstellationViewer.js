@@ -43,8 +43,8 @@ export class QuantumConstellationViewer {
     const w = this._container.clientWidth || window.innerWidth;
     const h = this._container.clientHeight || window.innerHeight;
 
-    this._renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this._renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' });
+    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this._renderer.setSize(w, h);
     this._renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -52,7 +52,7 @@ export class QuantumConstellationViewer {
     this._container.appendChild(this._renderer.domElement);
 
     this._scene = new THREE.Scene();
-    this._scene.fog = new THREE.FogExp2(0x020204, 0.05);
+    this._scene.fog = new THREE.FogExp2(0x030a18, 0.05);
 
     this._camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
     this._camera.position.set(0, 0, 7.5);
@@ -103,13 +103,31 @@ export class QuantumConstellationViewer {
     this._pointsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     this._pointsGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-    // Custom shader-like particle material
-    this._pointsMaterial = new THREE.PointsMaterial({
-      size: 3.5,
-      vertexColors: true,
+    // Respect each state's size attribute and keep overlapping points from
+    // adding into a single overexposed white cloud.
+    this._pointsMaterial = new THREE.ShaderMaterial({
       transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      blending: THREE.NormalBlending,
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        void main() {
+          vColor = color;
+          vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = clamp(size, 1.0, 12.0);
+          gl_Position = projectionMatrix * viewPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+          float radius = length(gl_PointCoord - vec2(0.5));
+          float alpha = 1.0 - smoothstep(0.34, 0.5, radius);
+          gl_FragColor = vec4(vColor, alpha * 0.86);
+        }
+      `,
     });
 
     this._pointsMesh = new THREE.Points(this._pointsGeometry, this._pointsMaterial);
@@ -118,7 +136,7 @@ export class QuantumConstellationViewer {
     // Subtle cosmic bounding ring
     const ringGeo = new THREE.RingGeometry(4.3, 4.34, 64);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0x45dfff,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.12,
@@ -138,7 +156,7 @@ export class QuantumConstellationViewer {
   updateFromState(probabilities, amplitudes, markedSet = new Set()) {
     if (this._disposed || this._isCollapsed) return;
 
-    this._markedIndices = new Set(markedSet);
+    for (const stateIndex of markedSet) this._markedIndices.add(stateIndex);
     const count = this._pointCount;
     const stride = Math.max(1, Math.floor(probabilities.length / count));
 
@@ -149,21 +167,26 @@ export class QuantumConstellationViewer {
       const stateIdx = i * stride;
       const prob = probabilities[stateIdx] || 0;
       const amp = amplitudes[stateIdx] || 0;
+      // A negative real amplitude denotes the oracle's π phase flip. Render it
+      // as a warm gold marker so the phase change is visible even before probability
+      // amplification makes those points grow.
+      if (amp < 0) this._markedIndices.add(stateIdx);
       const isMarked = this._markedIndices.has(stateIdx);
 
-      // Amplitude magnitude determines node size
-      const normalizedSize = Math.min(22, 1.5 + Math.sqrt(prob * count) * 4.5);
+      // Scale against the full register so uniform states look equal and
+      // amplified states grow in a visible, bounded way.
+      const normalizedSize = Math.min(10, 1.4 + Math.sqrt(prob * probabilities.length) * 1.6);
       sizes[i] = normalizedSize;
 
-      // Phase determines subtle hue: phase 180° (negative amplitude) is bright stark white with phase marker
+      // Phase 180° is a warm gold marker, distinct from the cool-blue candidate states.
       if (isMarked) {
         colors[i * 3]     = 1.0;
-        colors[i * 3 + 1] = 1.0;
-        colors[i * 3 + 2] = 1.0;
+        colors[i * 3 + 1] = 0.58;
+        colors[i * 3 + 2] = 0.16;
       } else {
-        const dim = Math.max(0.15, Math.min(0.85, Math.sqrt(prob * count) * 0.4));
-        colors[i * 3]     = dim;
-        colors[i * 3 + 1] = dim;
+        const dim = Math.max(0.28, Math.min(0.85, 0.28 + Math.sqrt(prob * probabilities.length) * 0.12));
+        colors[i * 3]     = dim * 0.16;
+        colors[i * 3 + 1] = dim * 0.58;
         colors[i * 3 + 2] = dim;
       }
     }
@@ -210,8 +233,8 @@ export class QuantumConstellationViewer {
         if (i === targetPointIdx) {
           sizes[i] = 16.0 + ease * 12.0;
           colors[i * 3] = 1.0;
-          colors[i * 3 + 1] = 1.0;
-          colors[i * 3 + 2] = 1.0;
+          colors[i * 3 + 1] = 0.72;
+          colors[i * 3 + 2] = 0.24;
         } else {
           pos[i * 3]     = base[i * 3]     + (tx - base[i * 3]) * ease;
           pos[i * 3 + 1] = base[i * 3 + 1] + (ty - base[i * 3 + 1]) * ease;

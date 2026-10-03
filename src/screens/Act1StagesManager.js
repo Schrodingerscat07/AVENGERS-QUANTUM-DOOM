@@ -33,6 +33,27 @@ import { Universe3DViewer } from './Universe3DViewer.js';
 import { audioController } from '../core/AudioController.js';
 import { wait } from '../core/utilities.js';
 
+const CORE_GUIDE_STAGES = ['ACT_1B', 'ACT_1C', 'ACT_1D', 'ACT_1E', 'ACT_1F', 'ACT_1G', 'ACT_1H', 'ACT_1I'];
+const QUANTUM_VISUAL_POINTS = 384;
+const STAGE_GUIDANCE = {
+  ACT_1B: { title: 'Choose what to search', action: 'Next: search combinations of heroes instead of checking more universes.' },
+  ACT_1C: { title: 'Set up the candidate space', action: 'Next: initialize the register that represents every possible team.' },
+  ACT_1D: { title: 'Give every state an equal starting chance', action: 'Click “Create equal starting state.” 12,144 states encode legal teams; the register has 32,768 total states.' },
+  ACT_1E: { title: 'Mark the teams that meet the rules', action: 'Click “Mark viable teams.” The oracle flips their phase; it does not raise their probability yet.' },
+  ACT_1F: { title: 'Read the phase change', action: 'The marked and unmarked teams are equally likely. Continue to see how interference changes that.' },
+  ACT_1G: { title: 'Turn phase into a probability difference', action: 'Apply diffusion once. It reflects amplitudes around their average.' },
+  ACT_1H: { title: 'Repeat the Grover search step', action: 'Click “Run one Grover step,” then watch the success probability rise before measuring.' },
+  ACT_1I: { title: 'Measure one candidate', action: 'Measurement samples one team using its probability. A stronger peak makes a viable team more likely.' },
+  ACT_1J: { title: 'Advanced lab: see why timing matters', action: 'Step the search past its peak, then reset. Too many iterations can lower success again.' },
+  ACT_1K: { title: 'Advanced lab: compare query counts', action: 'Compare classical checks with Grover’s approximate √N oracle queries.' },
+  ACT_1L: { title: 'Advanced lab: mark several answers', action: 'Run a Grover step and watch probability collect across multiple valid teams.' },
+  ACT_1M: { title: 'Advanced lab: unknown answer count', action: 'Continue to the search strategy for when the number of marked teams is unknown.' },
+  ACT_1N: { title: 'Advanced lab: search across realities', action: 'Continue to define a cross-reality team search.' },
+  ACT_1O: { title: 'Advanced lab: tighten the success rule', action: 'Check each survival threshold in order, then launch the elite search.' },
+  ACT_1P: { title: 'Advanced lab: find the elite team', action: 'Amplify the three elite configurations, then measure the register.' },
+  ACT_1_COMPLETE: { title: 'Guided Grover search complete', action: 'Review the four ideas, or choose the advanced lab to explore limits and harder searches.' },
+};
+
 export class Act1StagesManager extends EventTarget {
   /**
    * @param {HTMLElement} container
@@ -94,6 +115,7 @@ export class Act1StagesManager extends EventTarget {
 
     // Render Global Quantum Lens Button & Drawer
     this._renderQuantumLens();
+    this._renderLearningGuide();
 
     switch (this._stage) {
       case 'ACT_1B':
@@ -147,6 +169,54 @@ export class Act1StagesManager extends EventTarget {
       default:
         this._renderAct1B_Realization();
     }
+
+    if (['ACT_1D', 'ACT_1E', 'ACT_1G', 'ACT_1H', 'ACT_1I'].includes(this._stage)) {
+      const visual = this._el.querySelector('.stage-interactive-screen');
+      if (visual) {
+        const legend = document.createElement('aside');
+        legend.className = 'state-visual-legend';
+        legend.innerHTML = `
+          <span class="brief-kicker">HOW TO READ THE DOTS</span>
+          <span><i class="legend-dot legend-dot-dim"></i> Gray = candidate state</span>
+          <span><i class="legend-dot legend-dot-marked"></i> White = phase-marked as viable</span>
+          <span><i class="legend-dot legend-dot-large"></i> Larger = more likely when measured</span>
+        `;
+        visual.appendChild(legend);
+      }
+    }
+  }
+
+  _renderLearningGuide() {
+    const stageIndex = CORE_GUIDE_STAGES.indexOf(this._stage);
+    const advancedStages = ['ACT_1J', 'ACT_1K', 'ACT_1L', 'ACT_1M', 'ACT_1N', 'ACT_1O', 'ACT_1P'];
+    const advancedIndex = advancedStages.indexOf(this._stage);
+    const guidance = STAGE_GUIDANCE[this._stage] || STAGE_GUIDANCE.ACT_1_COMPLETE;
+    const label = stageIndex >= 0
+      ? `GUIDED SEARCH · STEP ${stageIndex + 1} OF ${CORE_GUIDE_STAGES.length}`
+      : advancedIndex >= 0
+        ? `OPTIONAL ADVANCED LAB · ${advancedIndex + 1} OF ${advancedStages.length}`
+        : 'SEARCH DEBRIEF';
+    const progress = stageIndex >= 0
+      ? ((stageIndex + 1) / CORE_GUIDE_STAGES.length) * 100
+      : advancedIndex >= 0 ? ((advancedIndex + 1) / advancedStages.length) * 100 : 100;
+
+    const guide = document.createElement('aside');
+    guide.classList.add('learning-guide');
+    guide.setAttribute('aria-live', 'polite');
+    guide.innerHTML = `
+      <div class="learning-guide-top">
+        <span class="learning-guide-count">${label}</span>
+        <span class="learning-guide-progress" aria-hidden="true"><span style="width:${progress}%"></span></span>
+      </div>
+      <strong class="learning-guide-title">${guidance.title}</strong>
+      <p class="learning-guide-action">${guidance.action}</p>
+    `;
+    this._el.appendChild(guide);
+    this._learningGuideAction = guide.querySelector('.learning-guide-action');
+  }
+
+  _setLearningHint(message) {
+    if (this._learningGuideAction) this._learningGuideAction.textContent = message;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -161,35 +231,20 @@ export class Act1StagesManager extends EventTarget {
         <p class="dialogue-tag">ACT 1B — THE REALIZATION</p>
         <h2 class="dialogue-speaker">THOR</h2>
         <div class="dialogue-lines">
-          <p class="d-line" id="line-b1">"One universe was enough to find a survivor."</p>
-          <p class="d-line" id="line-b2">"But not enough to find our strongest team."</p>
-          <p class="d-line" id="line-b3">"There are heroes in other realities."</p>
-          <p class="d-line" id="line-b4">"Why search for a universe..."</p>
-          <p class="d-line dramatic" id="line-b5">"...when we can search for the heroes themselves?"</p>
-          <p class="d-line conclusion" id="line-b6">"Let's search the multiverse."</p>
+          <p class="d-line visible">"One universe was enough to find a survivor."</p>
+          <p class="d-line visible">"But not enough to find our strongest team."</p>
+          <p class="d-line visible">"There are heroes in other realities."</p>
+          <p class="d-line visible">"Why search for a universe..."</p>
+          <p class="d-line visible dramatic">"...when we can search for the heroes themselves?"</p>
+          <p class="d-line visible conclusion">"Let's search the multiverse."</p>
         </div>
-        <button class="stage-primary-btn" id="btn-to-1c" style="opacity: 0">
-          ENTER MULTIVERSE HERO SPACE ▸
+        <button class="stage-primary-btn" id="btn-to-1c">
+          NEXT: DEFINE THE HERO SEARCH SPACE ▸
         </button>
       </div>
     `;
     this._el.appendChild(wrap);
-
-    const delays = [600, 2000, 3800, 5600, 7400, 9200];
-    delays.forEach((d, i) => {
-      setTimeout(() => {
-        const l = wrap.querySelector(`#line-b${i + 1}`);
-        if (l) l.classList.add('visible');
-      }, d);
-    });
-
-    setTimeout(() => {
-      const btn = wrap.querySelector('#btn-to-1c');
-      if (btn) {
-        btn.style.opacity = '1';
-        btn.addEventListener('click', () => this._setStage('ACT_1C'));
-      }
-    }, 10500);
+    wrap.querySelector('#btn-to-1c').addEventListener('click', () => this._setStage('ACT_1C'));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -200,29 +255,39 @@ export class Act1StagesManager extends EventTarget {
     const wrap = document.createElement('div');
     wrap.classList.add('stage-roster-screen');
     wrap.innerHTML = `
-      <header class="stage-header">
+      <header class="stage-header roster-stage-header">
         <div>
-          <span class="stage-tag">ACT 1C — THE MULTIVERSE HERO ROSTER</span>
-          <h2 class="stage-title">CROSS-REALITY CANDIDATE POOL</h2>
+          <span class="stage-tag">ACT 1C — DEFINE THE SEARCH</span>
+          <h2 class="stage-title">WHAT TEAM CAN SURVIVE?</h2>
+          <p class="roster-lede">We are searching for three distinct heroes who meet Doom’s defense rules.</p>
         </div>
         <div class="stage-metrics">
-          <div class="metric-card"><span class="m-label">HEROES</span><span class="m-val">24</span></div>
-          <div class="metric-card"><span class="m-label">POSITIONS</span><span class="m-val">3</span></div>
-          <div class="metric-card"><span class="m-label">POSSIBLE TEAMS</span><span class="m-val">12,144</span></div>
-          <div class="metric-card"><span class="m-label">QUANTUM REGISTER</span><span class="m-val">15 QUBITS</span></div>
+          <div class="metric-card"><span class="m-label">CANDIDATES</span><span class="m-val">24 HEROES</span></div>
+          <div class="metric-card"><span class="m-label">SEARCH SPACE</span><span class="m-val">12,144 TEAMS</span></div>
         </div>
       </header>
 
-      <div class="roster-instruction-banner">
-        <p><strong>TEAM CONSTRUCTION:</strong> SLOT 1 [TACTICAL/LEAD] · SLOT 2 [SPECIALIST] · SLOT 3 [FORCE/ANCHOR]</p>
-        <p class="banner-sub">Cross-reality combinations are unrestricted. Candidates come from independent parallel timelines.</p>
+      <section class="search-brief" aria-label="Search rules and quantum plan">
+        <div class="search-rule">
+          <span class="brief-kicker">THE RULE</span>
+          <strong>Build a team of 3 different heroes</strong>
+          <span>It must cover <b>MYSTIC</b>, <b>TECH</b> and <b>DIMENSIONAL</b>, with a survival score of 75 or higher.</span>
+        </div>
+        <div class="search-plan">
+          <span class="brief-kicker">WHY THESE QUANTUM STEPS?</span>
+          <div class="plan-flow">
+            <div><b>1 · SHARE</b><span>Give every possible team an equal starting chance.</span></div>
+            <div><b>2 · MARK</b><span>The oracle flips the phase of teams that pass the rule.</span></div>
+            <div><b>3 · AMPLIFY</b><span>Diffusion turns that phase tag into a higher chance to find them.</span></div>
+          </div>
+          <p class="search-advantage"><b>Classical:</b> check teams one by one. <b>Grover:</b> about √(N/M) oracle checks in the ideal model, then measure. This app simulates the process.</p>
+        </div>
       </div>
 
       <div class="roster-grid">
-        ${HERO_ROSTER.map((h, i) => `
+        ${HERO_ROSTER.map((h) => `
           <div class="roster-hero-card" data-id="${h.id}">
             <div class="hero-card-header">
-              <span class="hero-id-badge">#${String(i).padStart(2, '0')}</span>
               <span class="hero-reality-badge">${h.originReality}</span>
             </div>
             <h3 class="hero-card-name">${h.name}</h3>
@@ -232,18 +297,13 @@ export class Act1StagesManager extends EventTarget {
               ${h.attributes.technology ? '<span class="counter-badge">TECH</span>' : ''}
               ${h.attributes.dimensional ? '<span class="counter-badge">DIMENSIONAL</span>' : ''}
             </div>
-            <div class="hero-stat-bars">
-              <div class="stat-mini"><span>PWR</span><div class="bar-fill" style="width: ${h.power}%"></div></div>
-              <div class="stat-mini"><span>RES</span><div class="bar-fill" style="width: ${h.resilience}%"></div></div>
-              <div class="stat-mini"><span>TAC</span><div class="bar-fill" style="width: ${h.tactical}%"></div></div>
-            </div>
           </div>
         `).join('')}
       </div>
 
       <footer class="stage-footer">
-        <span class="footer-msg">Thor has stopped searching worlds. He is searching possibilities.</span>
-        <button class="stage-primary-btn" id="btn-to-1d">INITIALIZE QUANTUM CORE (15 QUBITS) ▸</button>
+        <span class="footer-msg">Next: spread probability across the search space.</span>
+        <button class="stage-primary-btn" id="btn-to-1d">NEXT: GIVE EVERY TEAM AN EQUAL CHANCE ▸</button>
       </footer>
     `;
     this._el.appendChild(wrap);
@@ -270,7 +330,7 @@ export class Act1StagesManager extends EventTarget {
         <div class="hud-panel-top">
           <span class="stage-tag">ACT 1D — FIRST QUANTUM DISCOVERY</span>
           <h2 class="stage-title">UNIFORM SUPERPOSITION</h2>
-          <p class="stage-desc">The 15-qubit register begins in ground state |000...000>. Apply Hadamard gates to split the search space across all 32,768 computational basis states.</p>
+          <p class="stage-desc">We start with one blank state. Hadamard gates spread its amplitude evenly across all 32,768 register states, so no team gets a head start.</p>
         </div>
 
         <div class="hud-panel-bottom">
@@ -280,8 +340,8 @@ export class Act1StagesManager extends EventTarget {
             <span class="info-sub" id="sup-amp-label">AMPLITUDE: 1.0 on |0>, 0 on others</span>
           </div>
           <div class="hud-actions">
-            <button class="stage-primary-btn" id="btn-apply-hadamard">⚡ SPLIT SEARCH SPACE [H^(⊗15)]</button>
-            <button class="stage-secondary-btn" id="btn-to-1e" style="display: none">PROCEED TO THE DOOM ORACLE ▸</button>
+            <button class="stage-primary-btn" id="btn-apply-hadamard">CREATE EQUAL STARTING STATE · APPLY H</button>
+            <button class="stage-secondary-btn" id="btn-to-1e" style="display: none">NEXT: MARK SAFE TEAMS WITH THE ORACLE ▸</button>
           </div>
         </div>
       </div>
@@ -289,7 +349,7 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
     this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
 
     const btnHadamard = wrap.querySelector('#btn-apply-hadamard');
@@ -304,6 +364,7 @@ export class Act1StagesManager extends EventTarget {
 
       stateLabel.textContent = 'UNIFORM SUPERPOSITION |s>';
       ampLabel.textContent = 'AMPLITUDE: α = 1/√(32,768) ≈ 0.005524 across all 32,768 states';
+      this._setLearningHint('All 32,768 register states now start equally; 12,144 encode legal teams. Next, the oracle marks the safe ones.');
 
       btnHadamard.disabled = true;
       btnHadamard.textContent = '✓ SUPERPOSITION ACTIVE';
@@ -337,7 +398,7 @@ export class Act1StagesManager extends EventTarget {
         <div class="hud-panel-top">
           <span class="stage-tag">ACT 1E — THE DOOM ORACLE</span>
           <h2 class="stage-title">PHASE MARKING PREDICATE</h2>
-          <p class="stage-desc">Doom defense requires: [MYSTIC] · [TECH] · [DIMENSIONAL] and SURVIVAL SCORE ≥ 75. The Oracle recognizes viable teams and inverts their phase: |x> → (-1)^f(x) |x>.</p>
+          <p class="stage-desc">The oracle checks the team rule. If a team passes, it flips that state’s phase (its amplitude sign). This tags the answer; its chance of being measured stays the same for now.</p>
         </div>
 
         <div class="hud-panel-bottom">
@@ -347,8 +408,8 @@ export class Act1StagesManager extends EventTarget {
             <span class="info-sub" id="oracle-hint">Does marking increase their probability? Test it.</span>
           </div>
           <div class="hud-actions">
-            <button class="stage-primary-btn" id="btn-mark-oracle">MARK VIABLE TEAMS [PHASE FLIP]</button>
-            <button class="stage-secondary-btn" id="btn-to-1f" style="display: none">DISCOVER PHASE IN QUANTUM LENS ▸</button>
+          <button class="stage-primary-btn" id="btn-mark-oracle">MARK SAFE TEAMS · FLIP THEIR PHASE</button>
+            <button class="stage-secondary-btn" id="btn-to-1f" style="display: none">NEXT: SEE WHY A PHASE FLIP MATTERS ▸</button>
           </div>
         </div>
       </div>
@@ -356,7 +417,7 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
     this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
 
     const btnMark = wrap.querySelector('#btn-mark-oracle');
@@ -379,6 +440,7 @@ export class Act1StagesManager extends EventTarget {
 
       statusLabel.textContent = `${markedCount} STATES PHASE-INVERTED`;
       hintLabel.textContent = 'NOTICE: Magnitude |α|² did NOT change. Probability remains identical.';
+      this._setLearningHint(`${markedCount.toLocaleString()} teams were marked. Their chance is unchanged for now; the oracle changed only their phase.`);
 
       btnMark.disabled = true;
       btnMark.textContent = '✓ STATES MARKED (PHASE π)';
@@ -431,7 +493,7 @@ export class Act1StagesManager extends EventTarget {
         </div>
 
         <button class="stage-primary-btn" id="btn-to-1g" style="margin-top: 24px">
-          RESONATE / INVERT ABOUT THE MEAN ▸
+          NEXT: USE DIFFUSION TO CHANGE AMPLITUDES ▸
         </button>
       </div>
     `;
@@ -448,13 +510,7 @@ export class Act1StagesManager extends EventTarget {
   // ═══════════════════════════════════════════════════════════════════════════
 
   _renderAct1G_Diffusion() {
-    // Reset and apply H then Oracle so Diffusion can act
-    this.sim.applyHadamard();
-    const predicate = (x) => {
-      const { h1, h2, h3, isValid } = decodeBasisState(x);
-      return isValid && evaluateCrossRealityTeam(h1, h2, h3, 75).viable;
-    };
-    this.sim.applyPhaseOracle(predicate);
+    // Continue from the oracle-marked state shown on the previous screen.
 
     const wrap = document.createElement('div');
     wrap.classList.add('stage-interactive-screen');
@@ -465,18 +521,18 @@ export class Act1StagesManager extends EventTarget {
         <div class="hud-panel-top">
           <span class="stage-tag">ACT 1G — DIFFUSION OPERATOR</span>
           <h2 class="stage-title">INVERSION ABOUT THE MEAN</h2>
-          <p class="stage-desc">Diffusion operator D = 2|s><s| - I reflects all state amplitudes about their average. Because marked states have negative amplitudes, reflecting them about the mean causes their amplitudes to surge upward!</p>
+          <p class="stage-desc">Diffusion reflects every amplitude around the average. The oracle-tagged states then move above that average, so their measurement chances grow. The quantum lens shows the equation.</p>
         </div>
 
         <div class="hud-panel-bottom">
           <div class="hud-info-card">
             <span class="info-label">DIFFUSION STATUS</span>
             <span class="info-val" id="diff-status">AWAITING RESONANCE INVERSION</span>
-            <span class="info-sub" id="diff-sub">Formula: α_x → 2 * mean(α) - α_x</span>
+          <span class="info-sub" id="diff-sub">This step changes amplitude, which changes measurement probability.</span>
           </div>
           <div class="hud-actions">
-            <button class="stage-primary-btn" id="btn-apply-diffusion">RESONATE [APPLY DIFFUSION]</button>
-            <button class="stage-secondary-btn" id="btn-to-1h" style="display: none">EXPLORE ITERATIVE AMPLIFICATION ▸</button>
+            <button class="stage-primary-btn" id="btn-apply-diffusion">APPLY DIFFUSION ONCE</button>
+            <button class="stage-secondary-btn" id="btn-to-1h" style="display: none">NEXT: REPEAT THE FULL GROVER STEP ▸</button>
           </div>
         </div>
       </div>
@@ -484,7 +540,7 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
     this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
 
     const btnDiff = wrap.querySelector('#btn-apply-diffusion');
@@ -499,6 +555,7 @@ export class Act1StagesManager extends EventTarget {
 
       statusVal.textContent = 'AMPLITUDE REDISTRIBUTION COMPLETE';
       subVal.textContent = `Mean amplitude: ${mean.toFixed(6)}. Marked amplitudes inverted and amplified!`;
+      this._setLearningHint('The marked team amplitudes rose above the average. A Grover step repeats the oracle and diffusion to build this signal.');
 
       btnDiff.disabled = true;
       btnDiff.textContent = '✓ DIFFUSION APPLIED';
@@ -521,11 +578,20 @@ export class Act1StagesManager extends EventTarget {
   // ═══════════════════════════════════════════════════════════════════════════
 
   _renderAct1H_Interference() {
+    // Start this repeatable experiment from a clean uniform state. The previous
+    // screen showed one oracle + diffusion pair as separate teaching steps.
+    this.sim.initialize();
     this.sim.applyHadamard();
     const predicate = (x) => {
       const { h1, h2, h3, isValid } = decodeBasisState(x);
       return isValid && evaluateCrossRealityTeam(h1, h2, h3, 75).viable;
     };
+    const markedIndices = new Set();
+    const visualStride = Math.max(1, Math.floor(this.sim.N / QUANTUM_VISUAL_POINTS));
+    for (let point = 0; point < QUANTUM_VISUAL_POINTS; point++) {
+      const state = point * visualStride;
+      if (predicate(state)) markedIndices.add(state);
+    }
 
     const wrap = document.createElement('div');
     wrap.classList.add('stage-interactive-screen');
@@ -536,7 +602,7 @@ export class Act1StagesManager extends EventTarget {
         <div class="hud-panel-top">
           <span class="stage-tag">ACT 1H — GROVER OPERATOR G = D * O</span>
           <h2 class="stage-title">AMPLITUDE AMPLIFICATION</h2>
-          <p class="stage-desc">Each Grover step couples the Oracle and Diffusion. Constructive interference concentrates probability into the marked subspace.</p>
+          <p class="stage-desc">One Grover step = oracle mark + diffusion. Repeating it raises the chance of measuring a passing team. Here N = 32,768 and M = 3,995, so the ideal query scale is about √(N/M) ≈ 3. This is a simulator, not a hardware speed test.</p>
         </div>
 
         <div class="hud-panel-bottom">
@@ -546,8 +612,8 @@ export class Act1StagesManager extends EventTarget {
             <span class="info-sub" id="iter-prob">SUCCESS PROBABILITY: ~12.2%</span>
           </div>
           <div class="hud-actions">
-            <button class="stage-primary-btn" id="btn-grover-step">⚡ AMPLIFY [GROVER STEP: D * O]</button>
-            <button class="stage-secondary-btn" id="btn-to-1i">OBSERVE / MEASURE STATE ▸</button>
+            <button class="stage-primary-btn" id="btn-grover-step">RUN ONE GROVER STEP · ORACLE + DIFFUSION</button>
+            <button class="stage-secondary-btn" id="btn-to-1i" disabled>MEASURE AFTER ONE STEP ▸</button>
           </div>
         </div>
       </div>
@@ -555,8 +621,8 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
-    this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
+    this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes, markedIndices);
 
     const btnStep = wrap.querySelector('#btn-grover-step');
     const btnToMeasure = wrap.querySelector('#btn-to-1i');
@@ -567,10 +633,13 @@ export class Act1StagesManager extends EventTarget {
       audioController.playScanStep(this.sim.iterations % 3);
       const res = this.sim.groverStep(predicate);
       this._quantumQueries++;
-      this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
+      this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes, markedIndices);
 
       countLabel.textContent = `ITERATION ${res.iteration}`;
       probLabel.textContent = `SUCCESS PROBABILITY: ${(res.successProbability * 100).toFixed(1)}%`;
+      btnToMeasure.disabled = false;
+      btnToMeasure.textContent = 'NEXT: MEASURE THIS SEARCH STATE ▸';
+      this._setLearningHint(`After ${res.iteration} Grover ${res.iteration === 1 ? 'step' : 'steps'}, viable-team probability is ${(res.successProbability * 100).toFixed(1)}%. Measure now, or run another step to compare.`);
     });
 
     btnToMeasure.addEventListener('click', () => {
@@ -604,7 +673,7 @@ export class Act1StagesManager extends EventTarget {
             <span class="info-sub">Sampling weighted by P(x) = |α_x|²</span>
           </div>
           <div class="hud-actions">
-            <button class="stage-primary-btn" id="btn-observe">👁 OBSERVE / MEASURE STATE</button>
+        <button class="stage-primary-btn" id="btn-observe">MEASURE ONE TEAM FROM THE DISTRIBUTION</button>
           </div>
         </div>
       </div>
@@ -612,7 +681,7 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
     this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
 
     const btnObserve = wrap.querySelector('#btn-observe');
@@ -634,7 +703,7 @@ export class Act1StagesManager extends EventTarget {
         this._constellation = null;
 
         // Reveal the sampled team in 3D
-        this._manifestSampledTeam(vp, h1, h2, h3, evalRes, 'ACT_1J');
+        this._manifestSampledTeam(vp, h1, h2, h3, evalRes, 'ACT_1_COMPLETE');
       });
     });
   }
@@ -665,7 +734,7 @@ export class Act1StagesManager extends EventTarget {
         <h3 class="r-title">${hero1.name} [${hero1.originReality}] · ${hero2.name} [${hero2.originReality}] · ${hero3.name} [${hero3.originReality}]</h3>
         <p class="r-score">DOOM SURVIVAL SCORE: ${evalRes.score} / 100</p>
         <p class="r-lesson">${evalRes.viable ? 'The quantum search successfully boosted this candidate into the measurement threshold.' : 'Search not yet concentrated. Measuring too early can sample an unamplified state.'}</p>
-        <button class="stage-primary-btn" id="btn-proceed-after-measure">CONTINUE TO ACT 1J [CRITICAL LIMITS] ▸</button>
+        <button class="stage-primary-btn" id="btn-proceed-after-measure">NEXT: REVIEW THE GROVER SEARCH ▸</button>
       </div>
     `;
     container.appendChild(resultBox);
@@ -1088,7 +1157,7 @@ export class Act1StagesManager extends EventTarget {
     this._el.appendChild(wrap);
 
     const vp = wrap.querySelector('#quantum-viewport');
-    this._constellation = new QuantumConstellationViewer(vp, 1024);
+    this._constellation = new QuantumConstellationViewer(vp, QUANTUM_VISUAL_POINTS);
     this._constellation.updateFromState(this.sim.getProbabilities(), this.sim.amplitudes);
 
     const btnAmp = wrap.querySelector('#btn-final-amplify');
@@ -1227,28 +1296,33 @@ export class Act1StagesManager extends EventTarget {
         <h2 class="dialogue-speaker">ACT 1 COMPLETE</h2>
 
         <div class="dialogue-lines">
-          <p class="d-line visible">"You have formulated the cross-reality search problem."</p>
-          <p class="d-line visible">"You have discovered Superposition, the Phase Oracle, and Diffusion."</p>
-          <p class="d-line visible">"You have navigated overshooting and progressive threshold searching."</p>
-          <p class="d-line visible dramatic">"The elite team has been assembled across the multiverse."</p>
+          <p class="d-line visible">A search problem has a set of candidates and a rule that identifies good answers.</p>
+          <p class="d-line visible">Superposition gives candidates equal starting amplitudes. The oracle flips the phase of answers.</p>
+          <p class="d-line visible">Diffusion and interference amplify those answers. Measurement samples one candidate.</p>
+          <p class="d-line visible dramatic">Grover search can find a marked answer in about √N oracle queries, when the answer count is known.</p>
         </div>
 
         <div class="act2-teaser-box">
-          <span class="act2-label">NEXT: ACT 2</span>
-          <h3 class="act2-title">QUANTUM COMMUNICATION</h3>
-          <p class="act2-sub">[ PLACEHOLDER — UNDER PREPARATION ]</p>
-          <p class="act2-desc">Doom has jammed all classical electromagnetic frequencies. To coordinate battle across three different realities, Thor must establish quantum entangled Bell pairs.</p>
+          <span class="act2-label">OPTIONAL NEXT</span>
+          <h3 class="act2-title">ADVANCED GROVER LAB</h3>
+          <p class="act2-desc">Explore overshooting, multiple answers, unknown answer counts, and stronger team thresholds.</p>
         </div>
 
-        <button class="stage-secondary-btn" id="btn-replay-act1" style="margin-top: 24px">
-          ↺ RESTART ACT 1 CAMPAIGN
-        </button>
+        <div class="guided-complete-actions">
+          <button class="stage-primary-btn" id="btn-advanced-lab">OPEN ADVANCED SEARCH LAB ▸</button>
+          <button class="stage-secondary-btn" id="btn-replay-act1">REPLAY GUIDED GROVER SEARCH</button>
+        </div>
+
+        <p class="act2-sub">ACT 2 · QUANTUM COMMUNICATION · COMING NEXT</p>
       </div>
     `;
     this._el.appendChild(wrap);
 
     wrap.querySelector('#btn-replay-act1').addEventListener('click', () => {
       this._setStage('ACT_1B');
+    });
+    wrap.querySelector('#btn-advanced-lab').addEventListener('click', () => {
+      this._setStage('ACT_1J');
     });
   }
 

@@ -354,7 +354,7 @@ export class MultiverseChamberScreen extends EventTarget {
     scanHeader.classList.add('scanner-header');
     scanHeader.innerHTML = `
       <span class="scanner-title">DOOM COMPATIBILITY SCAN</span>
-      <span class="scanner-status" id="scanner-state-label">READY</span>
+      <span class="scanner-status" id="scanner-state-label" role="status" aria-live="polite">READY</span>
     `;
 
     const scanConditions = document.createElement('div');
@@ -456,125 +456,99 @@ export class MultiverseChamberScreen extends EventTarget {
 
   async _runPhysicalScan(universe) {
     if (this._isScanning) return;
-    this._isScanning = true;
+    const overlay = this._el?.querySelector('.universe-inspection-overlay');
+    const scanBtn = overlay?.querySelector('#start-scan-btn');
+    const stateLabel = overlay?.querySelector('#scanner-state-label');
+    const footer = overlay?.querySelector('#scanner-footer');
+    const conditions = [
+      { key: 'mystic', label: 'MYSTIC COUNTER', element: overlay?.querySelector('#val-mystic') },
+      { key: 'technology', label: 'TECHNOLOGICAL COUNTER', element: overlay?.querySelector('#val-tech') },
+      { key: 'dimensional', label: 'DIMENSIONAL ANCHOR', element: overlay?.querySelector('#val-dim') },
+    ];
+    if (!overlay?.isConnected || !scanBtn || !stateLabel || !footer || conditions.some(step => !step.element)) return;
 
-    // Increment queries
+    this._isScanning = true;
     this._queriesUsed++;
     this._updateMetrics();
 
-    const scanBtn = document.getElementById('start-scan-btn');
-    const stateLabel = document.getElementById('scanner-state-label');
-    const valMystic = document.getElementById('val-mystic');
-    const valTech = document.getElementById('val-tech');
-    const valDim = document.getElementById('val-dim');
-    const footer = document.getElementById('scanner-footer');
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'SCANNING: MYSTIC COUNTER · 1 OF 3';
+    stateLabel.textContent = 'IN PROGRESS';
+    stateLabel.className = 'scanner-status scanning';
+    let completed = false;
 
-    if (scanBtn) {
-      scanBtn.disabled = true;
-      scanBtn.textContent = 'SCANNING REALITY...';
-    }
-    if (stateLabel) stateLabel.textContent = 'IN PROGRESS';
+    try {
+      const result = evaluateUniverse(universe);
+      for (const [index, step] of conditions.entries()) {
+        if (!overlay.isConnected) return;
+        scanBtn.textContent = `SCANNING: ${step.label} · ${index + 1} OF 3`;
+        step.element.textContent = 'SCANNING...';
+        step.element.className = 'cond-val scanning';
+        audioController.playScanStep(index);
+        await wait(500);
+        if (!overlay.isConnected) return;
 
-    // Evaluate candidate against Doom defense predicate
-    const rawResult = evaluateUniverse(universe);
-    const result = { ...rawResult, visited: true, scanned: true };
-    this._inspectedUniverses.set(universe.id, result);
-    this._updateChamberPortalCard(universe.id, result);
-    this._updateMetrics();
-
-    // STEP 1 — Mystic Counter Scan
-    valMystic.textContent = 'SCANNING...';
-    valMystic.className = 'cond-val scanning';
-    audioController.playScanStep(0);
-    await wait(800);
-
-    if (result.mystic) {
-      valMystic.textContent = '✓ DETECTED';
-      valMystic.className = 'cond-val detected';
-    } else {
-      valMystic.textContent = '✕ ABSENT';
-      valMystic.className = 'cond-val absent';
-    }
-
-    // STEP 2 — Technological Counter Scan
-    valTech.textContent = 'SCANNING...';
-    valTech.className = 'cond-val scanning';
-    audioController.playScanStep(1);
-    await wait(800);
-
-    if (result.technology) {
-      valTech.textContent = '✓ DETECTED';
-      valTech.className = 'cond-val detected';
-    } else {
-      valTech.textContent = '✕ ABSENT';
-      valTech.className = 'cond-val absent';
-    }
-
-    // STEP 3 — Dimensional Anchor Scan
-    valDim.textContent = 'SCANNING...';
-    valDim.className = 'cond-val scanning';
-    audioController.playScanStep(2);
-    await wait(800);
-
-    if (result.dimensional) {
-      valDim.textContent = '✓ DETECTED';
-      valDim.className = 'cond-val detected';
-    } else {
-      valDim.textContent = '✕ ABSENT';
-      valDim.className = 'cond-val absent';
-    }
-
-    await wait(500);
-
-    // FINAL RESOLUTION
-    if (result.viable) {
-      // VIABLE UNIVERSE FOUND (Universe 07)
-      audioController.playScanSuccess();
-      this._viewer3D?.energize();
-
-      if (stateLabel) {
-        stateLabel.textContent = 'VIABLE';
-        stateLabel.className = 'scanner-status viable';
+        const detected = result[step.key];
+        step.element.textContent = detected ? '✓ DETECTED' : '✕ ABSENT';
+        step.element.className = `cond-val ${detected ? 'detected' : 'absent'}`;
       }
 
-      footer.innerHTML = `
-        <div class="result-box result-viable">
-          <div class="result-tag">DOOM COMPATIBILITY</div>
-          <div class="result-progress-bar">████████████████</div>
-          <div class="result-verdict">VIABLE</div>
-          <p class="result-msg">All three Doom defense parameters satisfied. Reality capable of sustaining counter-offensive.</p>
-          <button class="proceed-summary-btn" id="proceed-summary-btn">PROCEED TO SEARCH DEBRIEF ▸</button>
-        </div>
-      `;
+      await wait(180);
+      if (!overlay.isConnected) return;
 
-      document.getElementById('proceed-summary-btn')?.addEventListener('click', () => {
-        this._closeUniverseView();
-        setTimeout(() => this._showSearchDebrief(), 450);
-      });
-    } else {
-      // FAILED UNIVERSE
-      audioController.playScanFail();
+      const savedResult = { ...result, visited: true, scanned: true };
+      this._inspectedUniverses.set(universe.id, savedResult);
+      this._updateChamberPortalCard(universe.id, savedResult);
+      stateLabel.textContent = result.viable ? 'VIABLE' : 'REJECTED';
+      stateLabel.className = `scanner-status ${result.viable ? 'viable' : 'rejected'}`;
 
-      if (stateLabel) {
-        stateLabel.textContent = 'REJECTED';
+      if (result.viable) {
+        audioController.playScanSuccess();
+        this._viewer3D?.energize();
+        footer.innerHTML = `
+          <div class="result-box result-viable">
+            <div class="result-tag">DOOM COMPATIBILITY</div>
+            <div class="result-progress-bar">ALL 3 DEFENSES VERIFIED</div>
+            <div class="result-verdict">VIABLE</div>
+            <p class="result-msg">Mystic, technological, and dimensional defenses are all present. This reality can sustain the counter-offensive.</p>
+            <button class="proceed-summary-btn" id="proceed-summary-btn">NEXT: REVIEW THE SEARCH ▸</button>
+          </div>
+        `;
+        footer.querySelector('#proceed-summary-btn')?.addEventListener('click', () => {
+          this._closeUniverseView();
+          setTimeout(() => this._showSearchDebrief(), 450);
+        });
+      } else {
+        audioController.playScanFail();
+        footer.innerHTML = `
+          <div class="result-box result-rejected">
+            <div class="result-verdict">RESULT: NOT VIABLE</div>
+            <p class="result-reason">${result.failureReason}</p>
+            <button class="return-btn" id="return-btn">NEXT: CHOOSE ANOTHER UNIVERSE</button>
+          </div>
+        `;
+        footer.querySelector('#return-btn')?.addEventListener('click', () => this._closeUniverseView());
+      }
+      completed = true;
+    } catch (error) {
+      console.error('[MultiverseChamberScreen] Compatibility scan failed:', error);
+      if (overlay.isConnected) {
+        stateLabel.textContent = 'SCAN INTERRUPTED';
         stateLabel.className = 'scanner-status rejected';
+        footer.innerHTML = `
+          <div class="result-box result-rejected">
+            <div class="result-verdict">THE SCAN DID NOT FINISH</div>
+            <p class="result-reason">Your place in the search is saved. Run the scan again to complete this check.</p>
+            <button class="return-btn" id="retry-scan-btn">RETRY COMPATIBILITY SCAN</button>
+          </div>
+        `;
+        footer.querySelector('#retry-scan-btn')?.addEventListener('click', () => this._runPhysicalScan(universe));
       }
-
-      footer.innerHTML = `
-        <div class="result-box result-rejected">
-          <div class="result-verdict">RESULT: NOT VIABLE</div>
-          <p class="result-reason">${result.failureReason}</p>
-          <button class="return-btn" id="return-btn">RETURN TO MULTIVERSE [ESC]</button>
-        </div>
-      `;
-
-      document.getElementById('return-btn')?.addEventListener('click', () => {
-        this._closeUniverseView();
-      });
+    } finally {
+      if (!completed) this._queriesUsed = Math.max(0, this._queriesUsed - 1);
+      this._isScanning = false;
+      this._updateMetrics();
     }
-
-    this._isScanning = false;
-    this._updateMetrics();
   }
 
   _displayPreScannedResult(result) {
@@ -607,7 +581,7 @@ export class MultiverseChamberScreen extends EventTarget {
           <div class="result-box result-viable">
             <div class="result-tag">DOOM COMPATIBILITY</div>
             <div class="result-verdict">VIABLE</div>
-            <button class="proceed-summary-btn" id="proceed-summary-btn">PROCEED TO SEARCH DEBRIEF ▸</button>
+            <button class="proceed-summary-btn" id="proceed-summary-btn">NEXT: REVIEW THE SEARCH ▸</button>
           </div>
         `;
         document.getElementById('proceed-summary-btn')?.addEventListener('click', () => {
@@ -706,15 +680,15 @@ export class MultiverseChamberScreen extends EventTarget {
         </div>
 
         <div class="debrief-narrative">
-          <p class="narrative-line" id="debrief-line-1">${this._queriesUsed} universes. One answer.</p>
+          <p class="narrative-line" id="debrief-line-1">${this._queriesUsed} ${this._queriesUsed === 1 ? 'query' : 'queries'} found one viable universe.</p>
           <p class="narrative-line" id="debrief-line-2">But something is wrong.</p>
           <p class="narrative-line" id="debrief-line-3">If Doom can counter that universe... why limit ourselves to one?</p>
           <p class="narrative-line dramatic" id="debrief-line-4">Every reality has heroes. Let's search the heroes.</p>
         </div>
 
         <div class="debrief-actions" id="debrief-actions">
-          <button class="stage-primary-btn" id="debrief-proceed-btn">ENTER MULTIVERSE HERO SEARCH ▸</button>
-          <button class="debrief-replay-btn" id="debrief-replay-btn">↺ SEARCH AGAIN</button>
+        <button class="stage-primary-btn" id="debrief-proceed-btn">NEXT: SEARCH COMBINATIONS OF HEROES ▸</button>
+          <button class="debrief-replay-btn" id="debrief-replay-btn">REPEAT UNIVERSE SEARCH</button>
         </div>
       </div>
     `;
@@ -724,20 +698,8 @@ export class MultiverseChamberScreen extends EventTarget {
     await wait(60);
     debrief.classList.add('visible');
 
-    // Stagger narrative lines
-    const lineDelays = [800, 2200, 4200, 6400];
-    lineDelays.forEach((delay, idx) => {
-      setTimeout(() => {
-        const line = debrief.querySelector(`#debrief-line-${idx + 1}`);
-        if (line) line.classList.add('visible');
-      }, delay);
-    });
-
-    // Reveal actions after narrative
-    setTimeout(() => {
-      const actions = debrief.querySelector('#debrief-actions');
-      if (actions) actions.classList.add('visible');
-    }, 8200);
+    debrief.querySelectorAll('.narrative-line').forEach(line => line.classList.add('visible'));
+    debrief.querySelector('#debrief-actions')?.classList.add('visible');
 
     // Proceed to Quantum Multiverse Hero Search
     debrief.querySelector('#debrief-proceed-btn').addEventListener('click', () => {
@@ -763,9 +725,9 @@ export class MultiverseChamberScreen extends EventTarget {
     UNIVERSES.forEach(u => {
       const card = document.getElementById(`portal-card-${u.id}`);
       if (card) {
-        card.classList.remove('status-viable', 'status-rejected');
+        card.classList.remove('status-viable', 'status-rejected', 'status-examined');
         const badge = card.querySelector('.card-status-badge');
-        if (badge) badge.textContent = 'UNEXAMINED';
+        if (badge) badge.innerHTML = '<span class="status-orb unexamined"></span>UNEXAMINED';
       }
     });
 

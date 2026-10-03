@@ -41,7 +41,7 @@ export class Universe3DViewer {
     const height = this._container.clientHeight || window.innerHeight;
 
     // ── Renderer ──
-    this._renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    this._renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' });
     // Character assets are texture-heavy; a modest pixel-ratio cap keeps the
     // full-screen viewport crisp while avoiding a large GPU fill-rate penalty.
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -49,8 +49,7 @@ export class Universe3DViewer {
     this._renderer.outputColorSpace = THREE.SRGBColorSpace;
     this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this._renderer.toneMappingExposure = 1.05;
-    this._renderer.shadowMap.enabled = true;
-    this._renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this._renderer.shadowMap.enabled = false;
 
     this._renderer.domElement.classList.add('universe-3d-canvas');
     this._container.appendChild(this._renderer.domElement);
@@ -92,10 +91,6 @@ export class Universe3DViewer {
     // Key Light (front top right)
     this._keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
     this._keyLight.position.set(3.5, 6.5, 5.0);
-    this._keyLight.castShadow = true;
-    this._keyLight.shadow.mapSize.width = 512;
-    this._keyLight.shadow.mapSize.height = 512;
-    this._keyLight.shadow.bias = -0.0005;
     this._scene.add(this._keyLight);
 
     // Fill Light (front top left)
@@ -196,11 +191,6 @@ export class Universe3DViewer {
       };
       this._modelsGroup.add(model);
     });
-
-    // Pre-compile all shaders and upload textures to GPU to prevent any rendering hitch
-    if (this._renderer && this._camera && !this._disposed) {
-      this._renderer.compile(this._scene, this._camera);
-    }
 
     if (this._onProgress && !this._disposed) {
       this._onProgress(100);

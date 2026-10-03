@@ -1337,6 +1337,11 @@ body {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+.scanner-status.scanning {
+  color: #ffffff;
+  animation: scanBlink 500ms ease-in-out infinite alternate;
+}
+
 /* ── Scanner Conditions List ── */
 .scanner-conditions {
   display: flex;

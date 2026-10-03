@@ -1130,6 +1130,151 @@
   transform: translateX(0);
 }
 
+/* Persistent plain-language prompt for the guided and advanced search paths. */
+.learning-guide {
+  position: absolute;
+  top: 14px;
+  left: 28px;
+  z-index: 24;
+  width: min(470px, calc(100% - 250px));
+  padding: 10px 14px 11px;
+  color: #ffffff;
+  background: rgba(5, 5, 7, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.learning-guide-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.learning-guide-count {
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.46rem;
+  letter-spacing: 0.2em;
+  color: #c8c8c8;
+  white-space: nowrap;
+}
+
+.learning-guide-progress {
+  flex: 1;
+  height: 3px;
+  max-width: 96px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.learning-guide-progress span {
+  display: block;
+  height: 100%;
+  background: #ffffff;
+  transition: width 250ms ease;
+}
+
+.learning-guide-title {
+  display: block;
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+}
+
+.learning-guide-action {
+  margin-top: 3px;
+  font-family: var(--font-cinematic, 'Rajdhani', sans-serif);
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: #c7c7c7;
+}
+
+/* Keep the guide clear of each page's own heading and footer controls. */
+.quantum-stage-hud {
+  padding-top: 126px;
+}
+
+.stage-roster-screen {
+  padding-top: 118px;
+}
+
+.stage-sandbox-panel {
+  padding-top: 118px;
+}
+
+.stage-dialogue-screen {
+  padding-top: 104px;
+}
+
+.guided-complete-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.guided-complete-actions .stage-primary-btn,
+.guided-complete-actions .stage-secondary-btn {
+  justify-content: center;
+}
+
+.start-scan-btn:disabled {
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 700px) {
+  .learning-guide {
+    top: 10px;
+    left: 12px;
+    width: calc(100% - 148px);
+    padding: 8px 10px;
+  }
+
+  .learning-guide-title {
+    font-size: 0.52rem;
+  }
+
+  .learning-guide-action {
+    font-size: 0.7rem;
+  }
+
+  .quantum-stage-hud {
+    padding: 112px 16px 18px;
+  }
+
+  .stage-roster-screen,
+  .stage-sandbox-panel {
+    padding: 108px 16px 20px;
+  }
+
+  .stage-dialogue-screen {
+    padding: 100px 16px 18px;
+    overflow-y: auto;
+  }
+
+  .hud-panel-bottom,
+  .hud-actions,
+  .stage-footer {
+    flex-wrap: wrap;
+  }
+
+  .hud-actions {
+    width: 100%;
+  }
+
+  .hud-actions > button {
+    flex: 1 1 220px;
+    justify-content: center;
+  }
+}
+
 .lens-header {
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   padding-bottom: 10px;
@@ -1229,5 +1374,459 @@
   }
   .complexity-comparison-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Search setup clarity (Act 1C) ─────────────────────────────────────── */
+.roster-stage-header {
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.roster-lede {
+  margin-top: 6px;
+  color: #b7b7b7;
+  font-family: var(--font-cinematic, 'Rajdhani', sans-serif);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.roster-stage-header .stage-metrics {
+  gap: 8px;
+}
+
+.roster-stage-header .metric-card {
+  min-width: 145px;
+  padding: 8px 12px;
+}
+
+.search-brief {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.8fr) minmax(0, 2fr);
+  gap: 16px;
+  margin: 2px 0 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(110deg, #111111, #080808 58%);
+}
+
+.search-rule,
+.search-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-rule {
+  padding-right: 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.brief-kicker {
+  color: #999999;
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.2em;
+}
+
+.search-rule > strong {
+  color: #ffffff;
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+
+.search-rule > span:last-child,
+.plan-flow span {
+  color: #b7b7b7;
+  font-family: var(--font-cinematic, 'Rajdhani', sans-serif);
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.search-rule b,
+.search-advantage b {
+  color: #ffffff;
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.74em;
+  letter-spacing: 0.08em;
+}
+
+.plan-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.plan-flow > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 10px;
+  border-left: 2px solid #777777;
+}
+
+.plan-flow > div b {
+  color: #ffffff;
+  font-family: var(--font-display, 'Orbitron', monospace);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+}
+
+.search-advantage {
+  margin-top: 5px;
+  color: #999999;
+  font-family: var(--font-cinematic, 'Rajdhani', sans-serif);
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.roster-grid {
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 8px;
+}
+
+.roster-hero-card {
+  min-height: 104px;
+  padding: 9px 11px;
+  gap: 4px;
+  background: linear-gradient(145deg, #111111, #070707 72%);
+}
+
+.roster-hero-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(255, 255, 255, 0.08);
+}
+
+.hero-card-header {
+  justify-content: flex-end;
+}
+
+.hero-card-name {
+  font-size: 0.68rem;
+}
+
+.hero-card-counters {
+  min-height: 14px;
+}
+
+.counter-badge {
+  color: #e0e0e0;
+  border-color: rgba(255, 255, 255, 0.2);
+  font-size: 0.4rem;
+}
+
+.roster-grid .hero-stat-bars {
+  display: none;
+}
+
+/* Grayscale state legend; it stays outside the main visualization. */
+.state-visual-legend {
+  position: absolute;
+  z-index: 6;
+  top: 138px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: min(250px, 25vw);
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(5, 5, 7, 0.84);
+  color: #c5c5c5;
+  font-family: var(--font-cinematic, 'Rajdhani', sans-serif);
+  font-size: 0.78rem;
+  pointer-events: none;
+}
+
+.state-visual-legend .brief-kicker {
+  margin-bottom: 2px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 7px 1px 0;
+  border-radius: 50%;
+  background: #858585;
+}
+
+.legend-dot-marked {
+  background: #ffffff;
+}
+
+.legend-dot-large {
+  width: 11px;
+  height: 11px;
+  background: #d8d8d8;
+  vertical-align: -2px;
+}
+
+@media (max-width: 900px) {
+  .roster-stage-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .search-rule {
+    padding: 0 0 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .state-visual-legend {
+    top: auto;
+    right: 16px;
+    bottom: 130px;
+    width: 220px;
+  }
+}
+
+@media (max-width: 600px) {
+  .plan-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .roster-stage-header .stage-metrics {
+    flex-wrap: wrap;
+  }
+
+  .roster-stage-header .metric-card {
+    min-width: 125px;
+  }
+
+  .state-visual-legend {
+    display: none;
+  }
+}
+
+/* ── Post-scan campaign theme: a playable quantum mission ──────────────── */
+.act1-stages-container {
+  --game-ink: #07101f;
+  --game-panel: rgba(10, 22, 40, 0.94);
+  --game-panel-soft: rgba(15, 34, 57, 0.88);
+  --game-line: rgba(104, 205, 255, 0.32);
+  --game-cyan: #62dcff;
+  --game-violet: #ae9bff;
+  --game-gold: #ffca69;
+  color: #edf7ff;
+  background:
+    radial-gradient(ellipse at 52% 38%, rgba(24, 72, 115, 0.28), transparent 56%),
+    radial-gradient(ellipse at 90% 10%, rgba(93, 66, 152, 0.16), transparent 38%),
+    #050a13;
+}
+
+.stage-primary-btn,
+.stage-primary-btn:hover:not(:disabled) {
+  color: #06101a;
+  border-color: #8fe9ff;
+  background: linear-gradient(135deg, #9aeeff, #55cfff 68%, #69a9ff);
+  box-shadow: 0 0 24px rgba(73, 199, 255, 0.32), inset 0 1px rgba(255, 255, 255, 0.72);
+}
+
+.stage-primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(73, 199, 255, 0.42), inset 0 1px rgba(255, 255, 255, 0.85);
+}
+
+.stage-secondary-btn {
+  color: #d9f6ff;
+  border-color: rgba(98, 220, 255, 0.55);
+  background: linear-gradient(135deg, rgba(22, 56, 88, 0.82), rgba(16, 27, 48, 0.92));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.stage-secondary-btn:hover:not(:disabled) {
+  color: #07101f;
+  border-color: #9aeeff;
+  background: #9aeeff;
+  box-shadow: 0 0 18px rgba(73, 199, 255, 0.36);
+}
+
+.stage-dialogue-screen,
+.stage-roster-screen,
+.stage-sandbox-panel,
+.stage-interactive-screen {
+  background-color: transparent;
+}
+
+.stage-dialogue-screen {
+  background: radial-gradient(ellipse at 50% 45%, rgba(28, 74, 115, 0.35), transparent 64%);
+}
+
+.dialogue-box,
+.hud-info-card,
+.search-brief,
+.roster-hero-card,
+.metric-card,
+.phase-card,
+.sandbox-stat-card,
+.state-visual-legend {
+  border-color: var(--game-line);
+  background-color: var(--game-panel);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.36), inset 0 1px rgba(153, 225, 255, 0.055);
+}
+
+.dialogue-box {
+  background: linear-gradient(145deg, rgba(13, 29, 49, 0.97), rgba(7, 13, 25, 0.97));
+}
+
+.stage-tag,
+.dialogue-tag,
+.info-label,
+.m-label,
+.brief-kicker,
+.learning-guide-count {
+  color: var(--game-cyan);
+}
+
+.stage-title,
+.dialogue-speaker,
+.dialogue-lines .dramatic,
+.dialogue-lines .conclusion {
+  color: #f2f8ff;
+  text-shadow: 0 0 22px rgba(91, 201, 255, 0.22);
+}
+
+.d-line,
+.stage-desc,
+.info-sub,
+.footer-msg,
+.roster-lede {
+  color: #b5c7dc;
+}
+
+.metric-card .m-val,
+.info-val {
+  color: #ffffff;
+}
+
+.roster-stage-header,
+.stage-footer {
+  border-color: var(--game-line);
+}
+
+.roster-hero-card {
+  background: linear-gradient(145deg, rgba(16, 36, 58, 0.97), rgba(7, 16, 30, 0.96) 72%);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.roster-hero-card:hover {
+  border-color: var(--game-cyan);
+  box-shadow: 0 10px 24px rgba(30, 158, 226, 0.18), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.hero-reality-badge {
+  color: #c6d8ee;
+  border-color: rgba(98, 220, 255, 0.24);
+  background: rgba(57, 143, 190, 0.12);
+}
+
+.counter-badge {
+  color: #d6efff;
+  border-color: rgba(98, 220, 255, 0.4);
+  background: rgba(63, 179, 225, 0.1);
+}
+
+.plan-flow > div {
+  border-color: var(--game-cyan);
+}
+
+.plan-flow > div:nth-child(2) {
+  border-color: var(--game-violet);
+}
+
+.plan-flow > div:nth-child(3) {
+  border-color: var(--game-gold);
+}
+
+.learning-guide {
+  border-color: rgba(98, 220, 255, 0.42);
+  background: linear-gradient(135deg, rgba(10, 26, 44, 0.96), rgba(11, 16, 31, 0.95));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(53, 166, 221, 0.12);
+}
+
+.learning-guide-progress {
+  background: rgba(98, 220, 255, 0.16);
+}
+
+.learning-guide-progress span {
+  background: linear-gradient(90deg, var(--game-cyan), var(--game-violet));
+  box-shadow: 0 0 10px rgba(98, 220, 255, 0.68);
+}
+
+.search-brief {
+  background: linear-gradient(110deg, rgba(18, 42, 67, 0.92), rgba(10, 20, 37, 0.96) 58%);
+}
+
+.search-rule b,
+.search-advantage b,
+.plan-flow > div:nth-child(3) b {
+  color: var(--game-gold);
+}
+
+.hud-panel-top {
+  background: linear-gradient(180deg, rgba(5, 12, 23, 0.94), rgba(5, 12, 23, 0.6) 72%, transparent 100%);
+}
+
+.hud-panel-bottom {
+  background: linear-gradient(0deg, rgba(5, 12, 23, 0.96), rgba(5, 12, 23, 0.72) 64%, transparent 100%);
+}
+
+.phase-card {
+  background: linear-gradient(145deg, rgba(16, 35, 57, 0.94), rgba(9, 19, 34, 0.96));
+}
+
+.phase-card.marked-highlight {
+  border-color: var(--game-gold);
+  background: linear-gradient(145deg, rgba(83, 57, 27, 0.35), rgba(11, 20, 34, 0.96));
+  box-shadow: 0 0 26px rgba(255, 190, 87, 0.16);
+}
+
+.phase-indicator,
+.pcard-stat strong {
+  color: var(--game-cyan);
+  text-shadow: 0 0 16px rgba(98, 220, 255, 0.24);
+}
+
+.phase-card.marked-highlight .phase-indicator,
+.phase-card.marked-highlight .pcard-stat strong {
+  color: var(--game-gold);
+  text-shadow: 0 0 16px rgba(255, 190, 87, 0.24);
+}
+
+.state-visual-legend {
+  background: rgba(7, 17, 31, 0.92);
+  color: #c9d9ec;
+}
+
+.legend-dot-dim {
+  background: var(--game-cyan);
+}
+
+.legend-dot-marked {
+  background: var(--game-gold);
+  box-shadow: 0 0 8px rgba(255, 202, 105, 0.72);
+}
+
+.legend-dot-large {
+  background: #b7aaff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage-primary-btn:not(:disabled) {
+    animation: mission-button-pulse 3.2s ease-in-out infinite;
+  }
+
+  @keyframes mission-button-pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(73, 199, 255, 0.24), inset 0 1px rgba(255, 255, 255, 0.72); }
+    50% { box-shadow: 0 0 28px rgba(73, 199, 255, 0.38), inset 0 1px rgba(255, 255, 255, 0.85); }
   }
 }
