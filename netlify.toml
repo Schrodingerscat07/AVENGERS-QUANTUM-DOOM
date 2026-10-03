@@ -1,0 +1,13 @@
+[build]
+  command = "npm ci && npm run verify:deploy"
+  publish = "."
+
+[[headers]]
+  for = "/*.glb"
+  [headers.values]
+    Content-Type = "model/gltf-binary"
+
+[[headers]]
+  for = "/3d models/*"
+  [headers.values]
+    Content-Type = "model/gltf-binary"

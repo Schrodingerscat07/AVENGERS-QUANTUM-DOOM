@@ -5,7 +5,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "serve -l 3000",
+    "verify:deploy": "node scripts/verify-deploy.mjs",
+    "test": "npm run verify:deploy"
   },
   "repository": {
     "type": "git",
@@ -17,8 +19,14 @@
   "bugs": {
     "url": "https://github.com/Schrodingerscat07/AVENGERS-QUANTUM-DOOM/issues"
   },
-  "homepage": "https://github.com/Schrodingerscat07/AVENGERS-QUANTUM-DOOM#readme",
+  "homepage": "https://schrodingerscat07.github.io/AVENGERS-QUANTUM-DOOM/",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
   }
 }

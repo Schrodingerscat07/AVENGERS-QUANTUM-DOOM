@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run verify:deploy",
+  "outputDirectory": ".",
+  "headers": [
+    {
+      "source": "/3d models/(.*)",
+      "headers": [{ "key": "Content-Type", "value": "model/gltf-binary" }]
+    },
+    {
+      "source": "/(.*\\.glb)",
+      "headers": [{ "key": "Content-Type", "value": "model/gltf-binary" }]
+    }
+  ]
+}
