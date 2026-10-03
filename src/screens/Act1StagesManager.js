@@ -29,6 +29,8 @@ import {
 } from '../quantum/heroRosterData.js';
 import { QuantumStatevector } from '../quantum/QuantumStatevector.js';
 import { QuantumConstellationViewer } from '../quantum/QuantumConstellationViewer.js';
+import { HeroRosterPreview } from './HeroRosterPreview.js';
+import { ScreenHeroModel } from './ScreenHeroModel.js';
 import { Universe3DViewer } from './Universe3DViewer.js';
 import { audioController } from '../core/AudioController.js';
 import { wait } from '../core/utilities.js';
@@ -72,6 +74,8 @@ export class Act1StagesManager extends EventTarget {
     this.sandboxSim = new QuantumStatevector(6);
 
     this._constellation = null;
+    this._heroPreview = null;
+    this._dialogueHeroModel = null;
     this._viewer3D = null;
     this._currentThreshold = 75;
     this._quantumLensOpen = false;
@@ -95,6 +99,8 @@ export class Act1StagesManager extends EventTarget {
 
   destroy() {
     this._constellation?.dispose();
+    this._heroPreview?.dispose();
+    this._dialogueHeroModel?.dispose();
     this._viewer3D?.dispose();
     this._el?.remove();
     this._el = null;
@@ -111,6 +117,10 @@ export class Act1StagesManager extends EventTarget {
   }
 
   _renderCurrentStage() {
+    this._heroPreview?.dispose();
+    this._heroPreview = null;
+    this._dialogueHeroModel?.dispose();
+    this._dialogueHeroModel = null;
     this._el.innerHTML = '';
 
     // Render Global Quantum Lens Button & Drawer
@@ -177,8 +187,8 @@ export class Act1StagesManager extends EventTarget {
         legend.className = 'state-visual-legend';
         legend.innerHTML = `
           <span class="brief-kicker">HOW TO READ THE DOTS</span>
-          <span><i class="legend-dot legend-dot-dim"></i> Gray = candidate state</span>
-          <span><i class="legend-dot legend-dot-marked"></i> White = phase-marked as viable</span>
+          <span><i class="legend-dot legend-dot-dim"></i> Teal = candidate state</span>
+          <span><i class="legend-dot legend-dot-marked"></i> Gold = phase-marked as viable</span>
           <span><i class="legend-dot legend-dot-large"></i> Larger = more likely when measured</span>
         `;
         visual.appendChild(legend);
@@ -219,14 +229,23 @@ export class Act1StagesManager extends EventTarget {
     if (this._learningGuideAction) this._learningGuideAction.textContent = message;
   }
 
+  _mountThorDialogueModel(screen) {
+    const container = screen.querySelector('.thor-screen-model');
+    if (container) this._dialogueHeroModel = new ScreenHeroModel(container, HERO_ROSTER[0]);
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ACT 1B — THE REALIZATION
   // ═══════════════════════════════════════════════════════════════════════════
 
   _renderAct1B_Realization() {
     const wrap = document.createElement('div');
-    wrap.classList.add('stage-dialogue-screen');
+    wrap.classList.add('stage-dialogue-screen', 'thor-dialogue-screen');
     wrap.innerHTML = `
+      <div class="thor-screen-model" aria-label="Thor on the mission screen">
+        <div class="thor-model-loader"><i></i><span class="thor-model-loading-text">THOR MATERIALIZING</span></div>
+        <span class="thor-model-caption">EARTH-118 <b>◆</b> ASGARDIAN FRONT LINE</span>
+      </div>
       <div class="dialogue-box">
         <p class="dialogue-tag">ACT 1B — THE REALIZATION</p>
         <h2 class="dialogue-speaker">THOR</h2>
@@ -244,6 +263,7 @@ export class Act1StagesManager extends EventTarget {
       </div>
     `;
     this._el.appendChild(wrap);
+    this._mountThorDialogueModel(wrap);
     wrap.querySelector('#btn-to-1c').addEventListener('click', () => this._setStage('ACT_1C'));
   }
 
@@ -267,6 +287,10 @@ export class Act1StagesManager extends EventTarget {
         </div>
       </header>
 
+      <div class="roster-main-layout">
+      <aside class="roster-character-stage" aria-label="Selected character model">
+        <div class="roster-character-model" id="thor-roster-preview" data-model-state="loading"></div>
+      </aside>
       <section class="search-brief" aria-label="Search rules and quantum plan">
         <div class="search-rule">
           <span class="brief-kicker">THE RULE</span>
@@ -282,23 +306,34 @@ export class Act1StagesManager extends EventTarget {
           </div>
           <p class="search-advantage"><b>Classical:</b> check teams one by one. <b>Grover:</b> about √(N/M) oracle checks in the ideal model, then measure. This app simulates the process.</p>
         </div>
-      </div>
+      </section>
 
-      <div class="roster-grid">
-        ${HERO_ROSTER.map((h) => `
-          <div class="roster-hero-card" data-id="${h.id}">
-            <div class="hero-card-header">
-              <span class="hero-reality-badge">${h.originReality}</span>
-            </div>
-            <h3 class="hero-card-name">${h.name}</h3>
-            <span class="hero-card-role">${h.roleTag}</span>
-            <div class="hero-card-counters">
-              ${h.attributes.mystic ? '<span class="counter-badge">MYSTIC</span>' : ''}
-              ${h.attributes.technology ? '<span class="counter-badge">TECH</span>' : ''}
-              ${h.attributes.dimensional ? '<span class="counter-badge">DIMENSIONAL</span>' : ''}
-            </div>
-          </div>
-        `).join('')}
+      <div class="roster-grid-wrap">
+        <div class="roster-grid-heading">
+          <div><span class="brief-kicker">YOUR SEARCH POOL</span><strong>24 HEROES · 12,144 POSSIBLE TEAMS</strong></div>
+          <span class="roster-pool-note">Every combination stays in play</span>
+        </div>
+        <div class="roster-grid">
+          ${HERO_ROSTER.map((h) => {
+            const initials = h.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('');
+            return `
+              <button class="roster-hero-card" type="button" data-id="${h.id}" aria-pressed="${h.id === HERO_ROSTER[0].id}">
+                <span class="hero-avatar" aria-hidden="true">${initials}</span>
+                <div class="hero-card-copy">
+                  <div class="hero-card-header"><span class="hero-reality-badge">${h.originReality}</span></div>
+                  <h3 class="hero-card-name">${h.name}</h3>
+                  <span class="hero-card-role">${h.roleTag}</span>
+                  <div class="hero-card-counters">
+                    ${h.attributes.mystic ? '<span class="counter-badge counter-mystic">MYSTIC</span>' : ''}
+                    ${h.attributes.technology ? '<span class="counter-badge counter-tech">TECH</span>' : ''}
+                    ${h.attributes.dimensional ? '<span class="counter-badge counter-dimensional">DIMENSIONAL</span>' : ''}
+                  </div>
+                </div>
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
       </div>
 
       <footer class="stage-footer">
@@ -307,6 +342,23 @@ export class Act1StagesManager extends EventTarget {
       </footer>
     `;
     this._el.appendChild(wrap);
+
+    this._heroPreview = new HeroRosterPreview(
+      wrap.querySelector('#thor-roster-preview'),
+      HERO_ROSTER[0]
+    );
+
+    wrap.querySelectorAll('.roster-hero-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        const hero = HERO_ROSTER.find((entry) => String(entry.id) === card.dataset.id);
+        if (!hero) return;
+
+        wrap.querySelectorAll('.roster-hero-card').forEach((candidate) => {
+          candidate.setAttribute('aria-pressed', String(candidate === card));
+        });
+        this._heroPreview?.showHero(hero);
+      });
+    });
 
     wrap.querySelector('#btn-to-1d').addEventListener('click', () => {
       audioController.playSelect();
@@ -1014,8 +1066,12 @@ export class Act1StagesManager extends EventTarget {
 
   _renderAct1N_TeamSearch() {
     const wrap = document.createElement('div');
-    wrap.classList.add('stage-dialogue-screen');
+    wrap.classList.add('stage-dialogue-screen', 'thor-dialogue-screen');
     wrap.innerHTML = `
+      <div class="thor-screen-model" aria-label="Thor on the mission screen">
+        <div class="thor-model-loader"><i></i><span class="thor-model-loading-text">THOR MATERIALIZING</span></div>
+        <span class="thor-model-caption">EARTH-118 <b>◆</b> ASGARDIAN FRONT LINE</span>
+      </div>
       <div class="dialogue-box">
         <p class="dialogue-tag">ACT 1N — CROSS-REALITY COMPOSITION</p>
         <h2 class="dialogue-speaker">THOR</h2>
@@ -1040,6 +1096,7 @@ export class Act1StagesManager extends EventTarget {
       </div>
     `;
     this._el.appendChild(wrap);
+    this._mountThorDialogueModel(wrap);
 
     wrap.querySelector('#btn-to-1o').addEventListener('click', () => {
       audioController.playSelect();
@@ -1222,6 +1279,7 @@ export class Act1StagesManager extends EventTarget {
 
     const teamData = {
       name: 'THE ELITE CROSS-REALITY STRIKE TEAM',
+      cameraFocusX: -1.35,
       layout: [
         { hero: hero1, position: [-1.9, 0, -0.3], rotation: [0, 0.35, 0], scaleMult: 1.0 },
         { hero: hero2, position: [0, 0.35, 0.4], rotation: [0, 0, 0], scaleMult: 1.05 },
@@ -1230,8 +1288,13 @@ export class Act1StagesManager extends EventTarget {
     };
 
     container.innerHTML = '';
-    this._viewer3D = new Universe3DViewer(container, teamData);
-    this._viewer3D.energize();
+    const stageScreen = container.closest('.stage-interactive-screen');
+    stageScreen?.classList.add('final-team-manifestation');
+    const stageHud = stageScreen?.querySelector('.quantum-stage-hud');
+    stageHud?.querySelector('.hud-panel-bottom')?.remove();
+    const guideTitle = this._el.querySelector('.learning-guide-title');
+    if (guideTitle) guideTitle.textContent = 'Elite team found';
+    this._setLearningHint('Review the three discovered heroes, then continue to the debrief.');
 
     const banner = document.createElement('div');
     banner.classList.add('final-act1-hud');
@@ -1239,6 +1302,9 @@ export class Act1StagesManager extends EventTarget {
       <div class="final-card">
         <span class="final-tag">ACT 1 COMPLETE — QUANTUM SEARCH SUCCESS</span>
         <h2 class="final-title">THE TEAM HAS BEEN FOUND</h2>
+        <div class="final-model-status" role="status" aria-live="polite">
+          <i></i><span id="final-model-status-label">MATERIALIZING THE 3D TEAM · 0%</span>
+        </div>
 
         <div class="final-team-roster">
           <div class="fhero-slot">
@@ -1274,7 +1340,16 @@ export class Act1StagesManager extends EventTarget {
         <button class="stage-primary-btn" id="btn-finish-act1">PROCEED TO DEBRIEF ▸</button>
       </div>
     `;
-    container.appendChild(banner);
+    (stageHud || stageScreen || container).appendChild(banner);
+
+    const statusLabel = banner.querySelector('#final-model-status-label');
+    this._viewer3D = new Universe3DViewer(container, teamData, (progress) => {
+      if (!statusLabel) return;
+      statusLabel.textContent = progress >= 100
+        ? 'THE 3D TEAM IS ON THE FIELD'
+        : `MATERIALIZING THE 3D TEAM · ${progress}%`;
+    });
+    this._viewer3D.energize();
 
     banner.querySelector('#btn-finish-act1').addEventListener('click', () => {
       this._viewer3D?.dispose();

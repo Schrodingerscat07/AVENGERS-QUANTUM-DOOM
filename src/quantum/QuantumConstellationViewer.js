@@ -116,7 +116,7 @@ export class QuantumConstellationViewer {
         void main() {
           vColor = color;
           vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = clamp(size, 1.0, 12.0);
+          gl_PointSize = clamp(size, 2.0, 18.0);
           gl_Position = projectionMatrix * viewPosition;
         }
       `,
@@ -124,8 +124,9 @@ export class QuantumConstellationViewer {
         varying vec3 vColor;
         void main() {
           float radius = length(gl_PointCoord - vec2(0.5));
-          float alpha = 1.0 - smoothstep(0.34, 0.5, radius);
-          gl_FragColor = vec4(vColor, alpha * 0.86);
+          float core = 1.0 - smoothstep(0.18, 0.48, radius);
+          float halo = 0.22 * (1.0 - smoothstep(0.12, 0.5, radius));
+          gl_FragColor = vec4(vColor, max(core, halo) * 0.92);
         }
       `,
     });
@@ -175,7 +176,7 @@ export class QuantumConstellationViewer {
 
       // Scale against the full register so uniform states look equal and
       // amplified states grow in a visible, bounded way.
-      const normalizedSize = Math.min(10, 1.4 + Math.sqrt(prob * probabilities.length) * 1.6);
+      const normalizedSize = Math.min(18, 8.5 + Math.sqrt(prob * probabilities.length) * 1.8);
       sizes[i] = normalizedSize;
 
       // Phase 180° is a warm gold marker, distinct from the cool-blue candidate states.
@@ -184,10 +185,10 @@ export class QuantumConstellationViewer {
         colors[i * 3 + 1] = 0.58;
         colors[i * 3 + 2] = 0.16;
       } else {
-        const dim = Math.max(0.28, Math.min(0.85, 0.28 + Math.sqrt(prob * probabilities.length) * 0.12));
-        colors[i * 3]     = dim * 0.16;
-        colors[i * 3 + 1] = dim * 0.58;
-        colors[i * 3 + 2] = dim;
+        const dim = Math.max(0.5, Math.min(0.92, 0.5 + Math.sqrt(prob * probabilities.length) * 0.06));
+        colors[i * 3]     = dim * 0.24;
+        colors[i * 3 + 1] = dim * 0.78;
+        colors[i * 3 + 2] = dim * 0.9;
       }
     }
 

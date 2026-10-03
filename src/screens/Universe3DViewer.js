@@ -31,6 +31,7 @@ export class Universe3DViewer {
     this._keyLight = null;
     this._platformRings = [];
     this._targetCameraZ = 6.6;
+    this._cameraFocusX = universe.cameraFocusX ?? 0;
     this._clock = new THREE.Clock();
 
     this._init();
@@ -60,8 +61,8 @@ export class Universe3DViewer {
 
     // ── Camera ──
     this._camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    this._camera.position.set(0, 1.35, 6.6);
-    this._camera.lookAt(0, 1.1, 0);
+    this._camera.position.set(this._cameraFocusX, 1.35, 6.6);
+    this._camera.lookAt(this._cameraFocusX, 1.1, 0);
 
     // ── Lighting ──
     this._setupLighting();
@@ -245,10 +246,10 @@ export class Universe3DViewer {
     });
 
     // Smooth camera drift & pull-back on victory
-    const targetX = Math.sin(elapsed * 0.25) * 0.25;
+    const targetX = this._cameraFocusX + Math.sin(elapsed * 0.25) * 0.25;
     this._camera.position.x += (targetX - this._camera.position.x) * 0.03;
     this._camera.position.z += (this._targetCameraZ - this._camera.position.z) * 0.04;
-    this._camera.lookAt(0, 1.1, 0);
+    this._camera.lookAt(this._cameraFocusX, 1.1, 0);
 
     this._renderer.render(this._scene, this._camera);
   }
