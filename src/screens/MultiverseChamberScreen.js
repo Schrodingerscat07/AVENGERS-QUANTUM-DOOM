@@ -188,9 +188,12 @@ export class MultiverseChamberScreen extends EventTarget {
     card.setAttribute('data-id', uni.id);
 
     const prevResult = this._inspectedUniverses.get(uni.id);
-    if (prevResult) {
+    if (prevResult?.scanned) {
       card.classList.add(prevResult.viable ? 'status-viable' : 'status-rejected');
+    } else if (prevResult?.visited) {
+      card.classList.add('status-examined');
     }
+    if (uni.id === this._targetUniverseId) card.classList.add('prime-candidate');
 
     // Rotating Portal Ring Animation
     const ringWrap = document.createElement('div');
@@ -214,6 +217,13 @@ export class MultiverseChamberScreen extends EventTarget {
 
     meta.appendChild(num);
     meta.appendChild(code);
+
+    if (uni.id === this._targetUniverseId) {
+      const primeMark = document.createElement('span');
+      primeMark.classList.add('card-prime-mark');
+      primeMark.textContent = 'Ω PRIME TIMELINE';
+      meta.appendChild(primeMark);
+    }
 
     // Team Preview Tags
     const teamPreview = document.createElement('div');
@@ -263,7 +273,7 @@ export class MultiverseChamberScreen extends EventTarget {
   // ═══════════════════════════════════════════════════════════════════════════
 
   async _openUniverse(universe) {
-    if (this._isScanning) return;
+    if (this._isScanning || this._currentUniverse) return;
     this._currentUniverse = universe;
     audioController.playSelect();
 
@@ -271,9 +281,9 @@ export class MultiverseChamberScreen extends EventTarget {
     if (!this._inspectedUniverses.has(universe.id)) {
       const examData = { visited: true, scanned: false, viable: false };
       this._inspectedUniverses.set(universe.id, examData);
-      this._updateChamberPortalCard(universe.id, examData);
-      this._updateMetrics();
     }
+    this._updateChamberPortalCard(universe.id, this._inspectedUniverses.get(universe.id));
+    this._updateMetrics();
 
     // Build modal / full screen universe viewport
     const viewContainer = document.createElement('div');
@@ -419,7 +429,7 @@ export class MultiverseChamberScreen extends EventTarget {
 
     // If universe was previously inspected, show previous result immediately
     const prev = this._inspectedUniverses.get(universe.id);
-    if (prev) {
+    if (prev?.scanned) {
       this._displayPreScannedResult(prev);
     }
   }

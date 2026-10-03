@@ -42,7 +42,9 @@ export class Universe3DViewer {
 
     // ── Renderer ──
     this._renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Character assets are texture-heavy; a modest pixel-ratio cap keeps the
+    // full-screen viewport crisp while avoiding a large GPU fill-rate penalty.
+    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this._renderer.setSize(width, height);
     this._renderer.outputColorSpace = THREE.SRGBColorSpace;
     this._renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -91,8 +93,8 @@ export class Universe3DViewer {
     this._keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
     this._keyLight.position.set(3.5, 6.5, 5.0);
     this._keyLight.castShadow = true;
-    this._keyLight.shadow.mapSize.width = 1024;
-    this._keyLight.shadow.mapSize.height = 1024;
+    this._keyLight.shadow.mapSize.width = 512;
+    this._keyLight.shadow.mapSize.height = 512;
     this._keyLight.shadow.bias = -0.0005;
     this._scene.add(this._keyLight);
 
@@ -151,48 +153,49 @@ export class Universe3DViewer {
   async _loadTeam() {
     const layout = this._universe.layout;
     const total = layout.length;
-    let completed = 0;
+    const assetProgress = new Array(total).fill(0);
+    const reportProgress = () => {
+      const average = assetProgress.reduce((sum, value) => sum + value, 0) / total;
+      this._onProgress?.(Math.round(average * 0.95));
+    };
 
-    for (const item of layout) {
-      if (this._disposed) return;
+    // Load a team's independent assets together. The cache still deduplicates
+    // shared GLBs when a universe is revisited or another scene requests them.
+    const models = await Promise.all(layout.map(async (item, index) => {
       const hero = item.hero;
       try {
         const model = await modelCache.instantiate(hero.file, {
           targetHeight: hero.baseScale * (item.scaleMult || 1.0),
           yOffset: hero.yOffset || 0,
         }, (pct) => {
-          if (this._onProgress) {
-            const overall = Math.round(((completed + pct / 100) / total) * 100);
-            this._onProgress(overall);
-          }
+          assetProgress[index] = Math.max(assetProgress[index], pct);
+          reportProgress();
         });
 
-        if (this._disposed) {
-          modelCache.dispose();
-          return;
-        }
-
-        // Apply spatial staging
-        model.position.set(...item.position);
-        model.rotation.set(...item.rotation);
-
-        // Store reference for idle animation
-        model.userData = {
-          baseY: item.position[1],
-          bobOffset: Math.random() * Math.PI * 2,
-        };
-
-        this._modelsGroup.add(model);
-        completed++;
-
-        if (this._onProgress) {
-          this._onProgress(Math.round((completed / total) * 95));
-        }
+        assetProgress[index] = 100;
+        reportProgress();
+        return { model, item };
       } catch (err) {
+        assetProgress[index] = 100;
+        reportProgress();
         console.error(`[Universe3DViewer] Failed loading hero model: ${hero.name}`, err);
-        completed++;
+        return null;
       }
-    }
+    }));
+
+    if (this._disposed) return;
+
+    models.forEach((entry) => {
+      if (!entry) return;
+      const { model, item } = entry;
+      model.position.set(...item.position);
+      model.rotation.set(...item.rotation);
+      model.userData = {
+        baseY: item.position[1],
+        bobOffset: Math.random() * Math.PI * 2,
+      };
+      this._modelsGroup.add(model);
+    });
 
     // Pre-compile all shaders and upload textures to GPU to prevent any rendering hitch
     if (this._renderer && this._camera && !this._disposed) {

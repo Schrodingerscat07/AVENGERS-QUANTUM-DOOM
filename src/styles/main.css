@@ -787,6 +787,11 @@ body {
   box-shadow: 0 8px 30px rgba(255, 255, 255, 0.25);
 }
 
+.portal-card.status-examined .card-status-badge {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
 .portal-card.status-rejected {
   border-color: rgba(255, 255, 255, 0.15);
   background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04) 0%, rgba(6, 6, 10, 0.8) 80%);
@@ -797,6 +802,36 @@ body {
   border-color: #ffffff;
   background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.3) 0%, rgba(25, 25, 35, 0.95) 80%);
   box-shadow: 0 0 40px rgba(255, 255, 255, 0.6), inset 0 0 25px rgba(255, 255, 255, 0.4);
+}
+
+.portal-card.prime-candidate {
+  border-color: rgba(255, 255, 255, 0.58);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.18), transparent 56%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(12, 12, 16, 0.96) 62%);
+}
+
+.portal-card.prime-candidate .card-portal-ring {
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.5);
+}
+
+.portal-card.prime-candidate .card-portal-core {
+  width: 38px;
+  height: 38px;
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.9);
+}
+
+.card-prime-mark {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.44rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── Portal Ring Graphic (Multi-Ring Glowing Spheres) ── */
@@ -953,6 +988,16 @@ body {
   font-weight: 900;
   border-color: #ffffff;
   box-shadow: 0 0 20px #ffffff;
+}
+
+.portal-card:focus-visible,
+.profile-toggle-btn:focus-visible,
+.hud-back-btn:focus-visible,
+.start-scan-btn:focus-visible,
+.proceed-summary-btn:focus-visible,
+.return-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
 }
 
 .status-rejected .card-status-badge {
@@ -1611,4 +1656,102 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 700px) {
+  .chamber-header {
+    padding: 18px 20px;
+    align-items: flex-start;
+  }
+
+  .chamber-metrics {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .metric-item {
+    flex: 1;
+    padding: 8px 10px;
+  }
+
+  .mission-bar {
+    padding: 14px 20px;
+    gap: 10px;
+  }
+
+  .mission-desc {
+    flex-basis: calc(100% - 90px);
+    font-size: 0.95rem;
+  }
+
+  .profile-toggle-btn {
+    margin-left: auto;
+  }
+
+  .portals-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 20px;
+  }
+
+  .portal-card {
+    min-height: 205px;
+    padding: 20px;
+  }
+
+  .chamber-footer {
+    padding: 14px 20px;
+    gap: 8px;
+    flex-wrap: wrap;
+    line-height: 1.6;
+  }
+
+  .inspection-hud {
+    padding: 18px 16px;
+  }
+
+  .hud-top {
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .hud-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    max-height: 56vh;
+    overflow-y: auto;
+  }
+
+  .hud-team-bar {
+    max-width: none;
+  }
+
+  .hud-team-chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .hud-hero-card {
+    flex-wrap: wrap;
+    border-radius: 14px;
+  }
+
+  .scanner-panel {
+    width: 100%;
+    max-width: none;
+    padding: 18px;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-card,
+  .card-portal-ring,
+  .card-portal-ring::before,
+  .card-portal-core,
+  .loader-spinner {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
 }
