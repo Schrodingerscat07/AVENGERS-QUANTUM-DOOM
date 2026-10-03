@@ -1,16 +1,38 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run verify:deploy",
   "outputDirectory": ".",
   "headers": [
     {
-      "source": "/3d models/(.*)",
-      "headers": [{ "key": "Content-Type", "value": "model/gltf-binary" }]
+      "source": "/3d%20models/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Content-Type", "value": "model/gltf-binary" }
+      ]
     },
     {
       "source": "/(.*\\.glb)",
-      "headers": [{ "key": "Content-Type", "value": "model/gltf-binary" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Content-Type", "value": "model/gltf-binary" }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/(.*\\.js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/(.*\\.css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
     }
   ]
 }

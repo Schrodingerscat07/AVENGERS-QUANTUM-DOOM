@@ -5,6 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "npx serve . --cors",
     "start": "serve -l 3000",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "test": "npm run verify:deploy"

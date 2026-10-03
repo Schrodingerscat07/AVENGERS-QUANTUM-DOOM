@@ -1,4 +1,4 @@
-# Dependencies
+# Dependencies — do NOT commit node_modules
 node_modules/
 
 # Logs & temporary files
@@ -10,3 +10,8 @@ scratch/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Vercel output
+.vercel/
+
+# NOTE: '3d models/' and 'images/' are intentionally tracked — Vercel serves them as static assets.

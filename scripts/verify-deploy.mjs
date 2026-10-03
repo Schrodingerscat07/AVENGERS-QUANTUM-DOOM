@@ -1,5 +1,6 @@
-/**
- * Pre-deploy checks: required HTML, Three.js, cinematic images, and hero GLBs exist on disk.
+﻿/**
+ * Pre-deploy checks: required HTML, cinematic images, and hero GLBs exist on disk.
+ * NOTE: three.js is loaded via esm.sh CDN — no node_modules check needed.
  */
 import fs from 'fs';
 import path from 'path';
@@ -20,7 +21,7 @@ function mustExist(relativePath) {
 }
 
 mustExist('index.html');
-mustExist('node_modules/three/build/three.module.js');
+// three.js is served from esm.sh CDN — no local node_modules check
 
 for (const scene of [...cinematicScenes, ...act2DoomScenes, ...act2ThorScenes]) {
   if (scene.image) mustExist(scene.image);
